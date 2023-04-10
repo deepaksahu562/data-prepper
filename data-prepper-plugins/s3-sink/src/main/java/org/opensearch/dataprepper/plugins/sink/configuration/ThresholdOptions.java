@@ -21,7 +21,7 @@ public class ThresholdOptions {
     private static final String DEFAULT_BYTE_CAPACITY = "50mb";
 
     @JsonProperty("event_count")
-    @Size(min = 0, max = 10000000, message = "event_count size should be between 1 and 10000000")
+    @Size(min = 0, max = 10000000, message = "event_count size should be between 0 and 10000000")
     @NotNull
     private int eventCount;
 

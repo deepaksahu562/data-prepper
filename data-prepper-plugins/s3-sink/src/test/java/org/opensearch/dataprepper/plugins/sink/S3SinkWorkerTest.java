@@ -13,19 +13,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.time.Duration;
-import java.util.NavigableSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
 import org.opensearch.dataprepper.model.configuration.PluginModel;
 import org.opensearch.dataprepper.model.configuration.PluginSetting;
 import org.opensearch.dataprepper.model.event.Event;
@@ -41,14 +35,12 @@ import org.opensearch.dataprepper.plugins.sink.configuration.AwsAuthenticationOp
 import org.opensearch.dataprepper.plugins.sink.configuration.BucketOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ObjectKeyOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ThresholdOptions;
-
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 class S3SinkWorkerTest {
 
-    private static final String DEFAULT_CODEC_FILE_EXTENSION = "json";
     private S3SinkConfig s3SinkConfig;
     private ThresholdOptions thresholdOptions;
     private AwsAuthenticationOptions awsAuthenticationOptions;
@@ -103,7 +95,6 @@ class S3SinkWorkerTest {
     @Test
     void verify_interactions() throws InterruptedException {
         BlockingQueue<Event> queue = generateEventQueue();
-        NavigableSet<String> bufferedEventSet = generateSet();
 
         S3SinkWorker worker = mock(S3SinkWorker.class);
         worker.bufferAccumulator(queue);
@@ -117,7 +108,6 @@ class S3SinkWorkerTest {
 
     @Test
     void test_cover_localFile_bufferAccumulator() throws IOException {
-        //String codecFileExtension = DEFAULT_CODEC_FILE_EXTENSION;
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.LOCALFILE);
         when(codec.parse(any())).thenReturn("{\"message\":\"31824252-adba-4c47-a2ac-05d16c5b8140\"}");
         S3SinkService s3SinkService = new S3SinkService(s3SinkConfig);
@@ -132,7 +122,6 @@ class S3SinkWorkerTest {
 
     @Test
     void test_cover_inMemory_bufferAccumulator() throws IOException {
-        //String codecFileExtension = DEFAULT_CODEC_FILE_EXTENSION;
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.INMEMORY);
         when(codec.parse(any())).thenReturn("{\"message\":\"31824252-adba-4c47-a2ac-05d16c5b8140\"}");
         S3SinkService s3SinkService = new S3SinkService(s3SinkConfig);
@@ -147,7 +136,6 @@ class S3SinkWorkerTest {
 
     @Test
     void test_cover_exception() throws IOException {
-        //String codecFileExtension = DEFAULT_CODEC_FILE_EXTENSION;
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.LOCALFILE);
         when(codec.parse(any())).thenReturn("{\"message\":\"31824252-adba-4c47-a2ac-05d16c5b8140\"}");
         S3SinkWorker worker = new S3SinkWorker(null, s3SinkConfig, codec);
@@ -162,15 +150,5 @@ class S3SinkWorkerTest {
             eventQueue.add(event);
         }
         return eventQueue;
-    }
-
-    private NavigableSet<String> generateSet() {
-        DB eventDb = DBMaker.memoryDB().make();
-        NavigableSet<String> bufferedEventSet = eventDb.treeSet("set").serializer(Serializer.STRING).createOrOpen();
-        for (int i = 0; i < 50; i++) {
-            final Event event = JacksonEvent.fromMessage(UUID.randomUUID().toString());
-            bufferedEventSet.add(event.toString());
-        }
-        return bufferedEventSet;
     }
 }

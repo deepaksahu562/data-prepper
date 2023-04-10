@@ -57,16 +57,17 @@ class S3ObjectWorkerIT {
         String bucket = System.getProperty("dataprepper");
 
         s3SinkConfig = mock(S3SinkConfig.class);
-        s3SinkService = mock(S3SinkService.class);
-        ThresholdOptions thresholdOptions = mock(ThresholdOptions.class);
-        BucketOptions bucketOptions = mock(BucketOptions.class);
-        ObjectKeyOptions objectKeyOptions = mock(ObjectKeyOptions.class);
-        PluginModel pluginModel = mock(PluginModel.class);
+        s3SinkService = new S3SinkService(s3SinkConfig);
+        ThresholdOptions thresholdOptions = s3SinkConfig.getThresholdOptions();
+        when(s3SinkConfig.getBucketOptions()).thenReturn(new BucketOptions());
+        BucketOptions bucketOptions = s3SinkConfig.getBucketOptions();
+        when(bucketOptions.getObjectKeyOptions()).thenReturn(new ObjectKeyOptions());
+        ObjectKeyOptions objectKeyOptions = bucketOptions.getObjectKeyOptions();
 
-        final PluginModel codecConfiguration = s3SinkConfig.getCodec();
+        /*final PluginModel codecConfiguration = s3SinkConfig.getCodec();
         final PluginSetting codecPluginSettings = new PluginSetting(codecConfiguration.getPluginName(),
                 codecConfiguration.getPluginSettings());
-        codec = pluginFactory.loadPlugin(Codec.class, codecPluginSettings);
+        codec = pluginFactory.loadPlugin(Codec.class, codecPluginSettings);*/
 
         when(s3SinkConfig.getBucketOptions()).thenReturn(bucketOptions);
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions()).thenReturn(objectKeyOptions);

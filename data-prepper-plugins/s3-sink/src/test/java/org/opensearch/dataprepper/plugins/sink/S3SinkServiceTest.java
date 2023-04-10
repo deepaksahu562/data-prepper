@@ -12,52 +12,35 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.opensearch.dataprepper.model.configuration.PluginModel;
-import org.opensearch.dataprepper.model.configuration.PluginSetting;
 import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.model.event.JacksonEvent;
-import org.opensearch.dataprepper.model.plugin.PluginFactory;
 import org.opensearch.dataprepper.model.record.Record;
 import org.opensearch.dataprepper.model.types.ByteCount;
 import org.opensearch.dataprepper.plugins.sink.accumulator.BufferTypeOptions;
-import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.opensearch.dataprepper.plugins.sink.configuration.AwsAuthenticationOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.BucketOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ObjectKeyOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ThresholdOptions;
-
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 class S3SinkServiceTest {
 
-    private static final String DEFAULT_CODEC_FILE_EXTENSION = "json";
     private S3SinkConfig s3SinkConfig;
     private ThresholdOptions thresholdOptions;
     private AwsAuthenticationOptions awsAuthenticationOptions;
     private AwsCredentialsProvider awsCredentialsProvider;
     private BucketOptions bucketOptions;
     private ObjectKeyOptions objectKeyOptions;
-    private Codec codec;
-    private PluginSetting pluginSetting;
-    private PluginFactory pluginFactory;
-    private PluginModel pluginModel;
-
-    @Captor
-    ArgumentCaptor<BlockingQueue<Event>> queueCaptor;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -67,14 +50,8 @@ class S3SinkServiceTest {
         bucketOptions = mock(BucketOptions.class);
         objectKeyOptions = mock(ObjectKeyOptions.class);
         awsAuthenticationOptions = mock(AwsAuthenticationOptions.class);
-        codec = mock(Codec.class);
-
-        pluginSetting = mock(PluginSetting.class);
-        pluginModel = mock(PluginModel.class);
-        pluginFactory = mock(PluginFactory.class);
 
         when(objectKeyOptions.getNamePattern()).thenReturn("my-elb-%{yyyy-MM-dd'T'hh-mm-ss}");
-
         when(s3SinkConfig.getThresholdOptions()).thenReturn(thresholdOptions);
         when(s3SinkConfig.getThresholdOptions().getEventCount()).thenReturn(100);
         when(s3SinkConfig.getThresholdOptions().getMaximumSize()).thenReturn(ByteCount.parse("1kb"));
@@ -89,13 +66,6 @@ class S3SinkServiceTest {
         when(s3SinkConfig.getAwsAuthenticationOptions()).thenReturn(awsAuthenticationOptions);
         when(awsAuthenticationOptions.getAwsRegion()).thenReturn(Region.of("us-east-1"));
         when(awsAuthenticationOptions.authenticateAwsConfiguration()).thenReturn(awsCredentialsProvider);
-
-        when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
-        when(pluginModel.getPluginName()).thenReturn("json");
-        when(pluginFactory.loadPlugin(Codec.class, pluginSetting)).thenReturn(codec);
-
-        when(pluginSetting.getName()).thenReturn("s3");
-        when(pluginSetting.getPipelineName()).thenReturn("S3-sink-pipeline");
     }
 
     @Test

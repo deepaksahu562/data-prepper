@@ -22,6 +22,7 @@ import org.opensearch.dataprepper.plugins.sink.accumulator.LocalFileBuffer;
 import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
@@ -87,11 +88,9 @@ public class S3SinkWorker {
                     byteCount, eventCount, eventCollectionDuration);
 
             if (s3SinkConfig.getBufferType().equals(BufferTypeOptions.LOCALFILE)) {
-                isFileUploadedToS3 = new LocalFileBuffer(s3Client, s3SinkConfig)
-                        .localFileAccumulate(bufferedEventSet);
+                isFileUploadedToS3 = new LocalFileBuffer(s3Client, s3SinkConfig).localFileAccumulate(bufferedEventSet);
             } else {
-                    isFileUploadedToS3 = new InMemoryBuffer(s3Client, s3SinkConfig)
-                        .inMemoryAccumulate(bufferedEventSet);
+                isFileUploadedToS3 = new InMemoryBuffer(s3Client, s3SinkConfig).inMemoryAccumulate(bufferedEventSet);
             }
 
             if (isFileUploadedToS3) {

@@ -6,6 +6,10 @@ import org.opensearch.dataprepper.plugins.sink.S3SinkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Building the path prefix and name pattern.
+ *
+ */
 public class ObjectKey {
 
     public static final Logger LOG = LoggerFactory.getLogger(ObjectKey.class);
@@ -38,6 +42,12 @@ public class ObjectKey {
         return s3ObjectPath.toString();
     }
 
+    /**
+     * Get the object file name with the extension.
+     * 
+     * @param s3SinkConfig
+     * @return
+     */
     public static String objectFileName(S3SinkConfig s3SinkConfig) {
         String configNamePattern = s3SinkConfig.getBucketOptions().getObjectKeyOptions().getNamePattern();
         int extensionIndex = configNamePattern.lastIndexOf('.');

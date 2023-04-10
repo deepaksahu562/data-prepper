@@ -8,7 +8,6 @@ package org.opensearch.dataprepper.plugins.sink.accumulator;
 import org.opensearch.dataprepper.plugins.sink.S3SinkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -32,7 +31,8 @@ public interface BufferType {
      * @return
      * @throws InterruptedException
      */
-    public default boolean uploadToAmazonS3(S3SinkConfig s3SinkConfig, S3Client s3Client, RequestBody requestBody) throws InterruptedException {
+    public default boolean uploadToAmazonS3(S3SinkConfig s3SinkConfig, S3Client s3Client, RequestBody requestBody)
+            throws InterruptedException {
 
         final String pathPrefix = ObjectKey.buildingPathPrefix(s3SinkConfig);
         final String namePattern = ObjectKey.objectFileName(s3SinkConfig);
@@ -47,7 +47,8 @@ public interface BufferType {
                 s3Client.putObject(request, requestBody);
                 isFileUploadedToS3 = Boolean.TRUE;
             } catch (AwsServiceException | SdkClientException e) {
-                LOG.error("Exception occurred while upload file {} to amazon s3 bucket. Retry count  : {} exception:", namePattern, retryCount, e);
+                LOG.error("Exception occurred while upload file {} to amazon s3 bucket. Retry count  : {} exception:",
+                        namePattern, retryCount, e);
                 --retryCount;
                 if (retryCount == 0) {
                     return isFileUploadedToS3;

@@ -12,11 +12,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.NavigableSet;
-
 import org.opensearch.dataprepper.plugins.sink.S3SinkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -50,7 +48,7 @@ public class LocalFileBuffer implements BufferType {
     public boolean localFileAccumulate(final NavigableSet<String> bufferedEventSet) throws InterruptedException {
         boolean isFileUploadedToS3 = Boolean.FALSE;
         String s3ObjectFileName = ObjectKey.objectFileName(s3SinkConfig);
-                File file = new File(s3ObjectFileName);
+        File file = new File(s3ObjectFileName);
         try (BufferedWriter eventWriter = new BufferedWriter(new FileWriter(s3ObjectFileName))) {
             for (String event : bufferedEventSet) {
                 eventWriter.write(event);

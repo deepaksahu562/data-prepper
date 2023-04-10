@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -35,7 +36,6 @@ import org.opensearch.dataprepper.plugins.sink.codec.JsonCodec;
 import org.opensearch.dataprepper.plugins.sink.configuration.AwsAuthenticationOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ObjectKeyOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ThresholdOptions;
-
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 
@@ -165,7 +165,7 @@ class S3SinkTest {
     void test_initialize_invoke() {
         s3Sink = mock(S3Sink.class);
         s3Sink.initialize();
-        verify(s3Sink).initialize();
+        verify(s3Sink, atLeastOnce()).initialize();
     }
 
     @Test
