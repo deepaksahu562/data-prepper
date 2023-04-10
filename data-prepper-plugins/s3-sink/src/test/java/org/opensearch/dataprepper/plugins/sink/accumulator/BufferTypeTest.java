@@ -74,16 +74,6 @@ class BufferTypeTest {
     void start_should_throw_IllegalStateException_when_buffer_is_null()  {
         BufferType bufferType = spy(BufferType.class);
 
-      /*  PutObjectRequest putObjectRequest = mock(PutObjectRequest.class);
-        // bufferType.uploadToAmazonS3(s3SinkConfig,s3Client,null);
-        NavigableSet<String> bufferedEventSet = generateSet();
-        StringBuilder eventBuilder = new StringBuilder();
-        for (String event : bufferedEventSet) {
-            eventBuilder.append(event);
-        }*/
-
-        //when(s3Client.putObject(putObjectRequest,RequestBody.fromString(eventBuilder.toString()))).thenReturn(throw new AwsServiceException);
-
         assertThrows(NullPointerException.class, () ->  bufferType.uploadToAmazonS3(s3SinkConfig,s3Client,null));
     }
 
