@@ -26,7 +26,7 @@ public class S3SinkService {
 
     private static final Logger LOG = LoggerFactory.getLogger(S3SinkService.class);
     private final S3SinkConfig s3SinkConfig;
-    private static final int EVENT_QUEUE_SIZE = 64 * 1024 * 1024;
+    private static final int EVENT_QUEUE_SIZE = 100000;
     private BlockingQueue<Event> eventQueue;
     private final Lock reentrantLock;
 
