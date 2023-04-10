@@ -26,7 +26,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class BufferTypeTest {
+class BufferTypeTest {
 
 
     private S3Client s3Client;
