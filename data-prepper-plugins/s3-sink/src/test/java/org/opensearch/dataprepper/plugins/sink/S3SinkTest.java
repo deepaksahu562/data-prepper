@@ -9,19 +9,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -156,7 +153,7 @@ class S3SinkTest {
         s3SinkService.processRecords(records);
         s3SinkService.accumulateBufferEvents(worker);
 
-        InOrder inOrder = inOrder( s3SinkService);
+        InOrder inOrder = inOrder(s3SinkService);
         inOrder.verify(s3SinkService).createS3Client();
         inOrder.verify(s3SinkService).processRecords(records);
         inOrder.verify(s3SinkService).accumulateBufferEvents(worker);
@@ -168,7 +165,7 @@ class S3SinkTest {
     void test_initialize_invoke() {
         s3Sink = mock(S3Sink.class);
         s3Sink.initialize();
-        verify(s3Sink, atLeastOnce()).initialize();
+        verify(s3Sink).initialize();
     }
 
     @Test

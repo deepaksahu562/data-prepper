@@ -5,7 +5,6 @@
 
 package org.opensearch.dataprepper.plugins.sink;
 
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -22,12 +21,15 @@ import java.util.concurrent.BlockingQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opensearch.dataprepper.model.configuration.PluginModel;
+import org.opensearch.dataprepper.model.configuration.PluginSetting;
 import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.model.event.JacksonEvent;
 import org.opensearch.dataprepper.model.log.JacksonLog;
+import org.opensearch.dataprepper.model.plugin.PluginFactory;
 import org.opensearch.dataprepper.model.record.Record;
 import org.opensearch.dataprepper.model.types.ByteCount;
 import org.opensearch.dataprepper.plugins.sink.accumulator.BufferTypeOptions;
+import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.opensearch.dataprepper.plugins.sink.configuration.BucketOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ObjectKeyOptions;
 import org.opensearch.dataprepper.plugins.sink.configuration.ThresholdOptions;
@@ -39,8 +41,9 @@ class S3ObjectWorkerIT {
     private final BlockingQueue<Event> eventQueue;
     private S3SinkConfig s3SinkConfig;
     private S3SinkService s3SinkService;
+    private PluginFactory pluginFactory;
+    private Codec codec;
     private static final int EVENT_QUEUE_SIZE = 100000;
-    private String codecFileExtension = null;
     private static final String DEFAULT_CODEC_FILE_EXTENSION = "json";
 
     public S3ObjectWorkerIT() {
@@ -50,8 +53,8 @@ class S3ObjectWorkerIT {
     @BeforeEach
     public void setUp() {
 
-        s3Client = S3Client.builder().region(Region.of(System.getProperty("tests.s3source.region"))).build();
-        String bucket = System.getProperty("tests.s3source.bucket");
+        s3Client = S3Client.builder().region(Region.of("us-east-1")).build();
+        String bucket = System.getProperty("dataprepper");
 
         s3SinkConfig = mock(S3SinkConfig.class);
         s3SinkService = mock(S3SinkService.class);
@@ -60,12 +63,10 @@ class S3ObjectWorkerIT {
         ObjectKeyOptions objectKeyOptions = mock(ObjectKeyOptions.class);
         PluginModel pluginModel = mock(PluginModel.class);
 
-        when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
-
-        codecFileExtension = s3SinkConfig.getCodec().getPluginName();
-        if (codecFileExtension == null || codecFileExtension.isEmpty()) {
-            codecFileExtension = DEFAULT_CODEC_FILE_EXTENSION;
-        }
+        final PluginModel codecConfiguration = s3SinkConfig.getCodec();
+        final PluginSetting codecPluginSettings = new PluginSetting(codecConfiguration.getPluginName(),
+                codecConfiguration.getPluginSettings());
+        codec = pluginFactory.loadPlugin(Codec.class, codecPluginSettings);
 
         when(s3SinkConfig.getBucketOptions()).thenReturn(bucketOptions);
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions()).thenReturn(objectKeyOptions);
@@ -82,9 +83,7 @@ class S3ObjectWorkerIT {
     @Test
     void copy_s3_object_correctly_into_s3_bucket() {
 
-        RecordsGenerator recordsGenerator = new JsonRecordsGenerator();
-        assertNotNull(recordsGenerator);
-        S3SinkWorker s3SinkWorker = new S3SinkWorker(s3Client, s3SinkConfig, recordsGenerator.getCodec());
+        S3SinkWorker s3SinkWorker = new S3SinkWorker(s3Client, s3SinkConfig, codec);
         Collection<Record<Event>> records = setEventQueue();
         s3SinkService.processRecords(records);
         s3SinkService.accumulateBufferEvents(s3SinkWorker);

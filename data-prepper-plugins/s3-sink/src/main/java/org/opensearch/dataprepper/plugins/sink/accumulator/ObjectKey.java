@@ -1,7 +1,6 @@
 package org.opensearch.dataprepper.plugins.sink.accumulator;
 
 import java.util.regex.Pattern;
-
 import org.opensearch.dataprepper.plugins.s3keyindex.S3ObjectIndex;
 import org.opensearch.dataprepper.plugins.sink.S3SinkConfig;
 import org.slf4j.Logger;
@@ -9,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 public class ObjectKey {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ObjectKey.class);
+    public static final Logger LOG = LoggerFactory.getLogger(ObjectKey.class);
     private static final String DEFAULT_CODEC_FILE_EXTENSION = "json";
     private static final String TIME_PATTERN_REGULAR_EXPRESSION = "\\%\\{.*?\\}";
     private static final Pattern SIMPLE_DURATION_PATTERN = Pattern.compile(TIME_PATTERN_REGULAR_EXPRESSION);
@@ -40,16 +39,13 @@ public class ObjectKey {
     }
 
     public static String objectFileName(S3SinkConfig s3SinkConfig) {
-        return S3ObjectIndex
-                .getObjectNameWithDateTimeId(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getNamePattern())
-                + "." + codecFileExtension(s3SinkConfig);
-    }
-
-    public static String codecFileExtension(S3SinkConfig s3SinkConfig) {
-        String codecFileExtension = s3SinkConfig.getCodec().getPluginName();
-        if (codecFileExtension == null || codecFileExtension.isEmpty()) {
-            codecFileExtension = DEFAULT_CODEC_FILE_EXTENSION;
+        String configNamePattern = s3SinkConfig.getBucketOptions().getObjectKeyOptions().getNamePattern();
+        int extensionIndex = configNamePattern.lastIndexOf('.');
+        if (extensionIndex > 0) {
+            return S3ObjectIndex.getObjectNameWithDateTimeId(configNamePattern.substring(0, extensionIndex)) + "."
+                    + configNamePattern.substring(extensionIndex + 1);
+        } else {
+            return S3ObjectIndex.getObjectNameWithDateTimeId(configNamePattern) + "." + DEFAULT_CODEC_FILE_EXTENSION;
         }
-        return codecFileExtension;
     }
 }
