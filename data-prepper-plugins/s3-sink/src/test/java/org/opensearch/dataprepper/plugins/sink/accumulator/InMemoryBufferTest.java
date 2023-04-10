@@ -65,9 +65,6 @@ class InMemoryBufferTest {
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn("logdata/");
         when(objectKeyOptions.getNamePattern()).thenReturn("my-elb-%{yyyy-MM-dd'T'hh-mm-ss}");
 
-        when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
-        when(pluginModel.getPluginName()).thenReturn(DEFAULT_CODEC_FILE_EXTENSION);
-
         InMemoryBuffer inMemoryBuffer = new InMemoryBuffer(s3Client, s3SinkConfig);
         inMemoryBuffer.inMemoryAccumulate(bufferedEventSet);
         verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -120,9 +117,6 @@ class InMemoryBufferTest {
         when(s3SinkConfig.getBucketOptions().getBucketName()).thenReturn("dataprepper");
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn("logdata/");
         when(objectKeyOptions.getNamePattern()).thenReturn("my-elb-%{yyyy-MM-dd'T'hh-mm-ss}");
-
-        when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
-        when(pluginModel.getPluginName()).thenReturn(DEFAULT_CODEC_FILE_EXTENSION);
 
         InMemoryBuffer inMemoryBuffer = new InMemoryBuffer(s3Client, s3SinkConfig);
         assertNotNull(inMemoryBuffer);
