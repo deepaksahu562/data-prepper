@@ -42,7 +42,6 @@ public class S3SinkWorker {
      * @param s3Client
      * @param s3SinkConfig
      * @param codec
-     * @param codecFileExtension
      */
     public S3SinkWorker(final S3Client s3Client, final S3SinkConfig s3SinkConfig, final Codec codec) {
         this.s3Client = s3Client;
