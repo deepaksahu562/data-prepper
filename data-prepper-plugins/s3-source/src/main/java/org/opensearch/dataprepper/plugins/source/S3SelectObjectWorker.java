@@ -15,6 +15,7 @@ import org.opensearch.dataprepper.model.buffer.Buffer;
 import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.model.log.JacksonLog;
 import org.opensearch.dataprepper.model.record.Record;
+import org.opensearch.dataprepper.model.acknowledgements.AcknowledgementSet;
 import org.opensearch.dataprepper.plugins.source.configuration.S3SelectCSVOption;
 import org.opensearch.dataprepper.plugins.source.configuration.S3SelectJsonOption;
 import org.opensearch.dataprepper.plugins.source.configuration.S3SelectSerializationFormatOption;
@@ -42,12 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -59,8 +54,6 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
     private static final Logger LOG = LoggerFactory.getLogger(S3SelectObjectWorker.class);
 
     static final long MAX_S3_OBJECT_CHUNK_SIZE = 64 * 1024 * 1024;
-    private static final int MAX_FLUSH_RETRIES_ON_IO_EXCEPTION = Integer.MAX_VALUE;
-    private static final Duration INITIAL_FLUSH_RETRY_DELAY_ON_IO_EXCEPTION = Duration.ofSeconds(5);
     static final String S3_BUCKET_NAME = "bucket";
     static final String S3_OBJECT_KEY = "key";
     static final String S3_BUCKET_REFERENCE_NAME = "s3";
@@ -82,6 +75,7 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
     private final S3SelectCSVOption s3SelectCSVOption;
     private final S3SelectJsonOption s3SelectJsonOption;
     private final String expressionType;
+
     public S3SelectObjectWorker(final S3ObjectRequest s3ObjectRequest) {
         this.buffer = s3ObjectRequest.getBuffer();
         this.numberOfRecordsToAccumulate = s3ObjectRequest.getNumberOfRecordsToAccumulate();
@@ -98,15 +92,9 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
         this.expressionType = s3ObjectRequest.getExpressionType();
     }
 
-    /**
-     * Fetch the S3 object content using s3 select service and parsing and pushing to buffer.
-     * @param s3ObjectReference Contains bucket and s3 object details
-     *
-     * @throws IOException When Input/Output exception occur while processing the data.
-     */
-    public void parseS3Object(final S3ObjectReference s3ObjectReference) throws IOException {
+    public void parseS3Object(final S3ObjectReference s3ObjectReference, final AcknowledgementSet acknowledgementSet) throws IOException {
         try{
-            selectObjectInBatches(s3ObjectReference);
+            selectObjectInBatches(s3ObjectReference, acknowledgementSet);
         } catch (Exception e){
             LOG.error("Unable to process object reference: {}", s3ObjectReference, e);
             s3ObjectPluginMetrics.getS3ObjectsFailedCounter().increment();
@@ -114,7 +102,7 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
         }
     }
 
-    private void selectObjectInBatches(final S3ObjectReference s3ObjectReference) throws IOException {
+    private void selectObjectInBatches(final S3ObjectReference s3ObjectReference, final AcknowledgementSet acknowledgementSet) throws IOException {
         final InputSerialization inputSerialization = getInputSerializationFormat(serializationFormatOption);
         InputStream inputStreamList;
         final BufferAccumulator<Record<Event>> bufferAccumulator = BufferAccumulator.create(buffer, numberOfRecordsToAccumulate, bufferTimeout);
@@ -138,9 +126,8 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
             final List<SelectObjectContentEventStream> receivedEvents = s3SelectResponseHandler.getS3SelectContentEvents();
             if (!receivedEvents.isEmpty()) {
                 inputStreamList = getInputStreamFromResponseHeader(s3SelectResponseHandler);
-                parseCompleteStreamFromResponseHeader(s3ObjectReference, bufferAccumulator, inputStreamList);
+                parseCompleteStreamFromResponseHeader(acknowledgementSet, s3ObjectReference, bufferAccumulator, inputStreamList);
                 s3ObjectPluginMetrics.getS3ObjectEventsSummary().record(bufferAccumulator.getTotalWritten());
-                s3ObjectPluginMetrics.getS3ObjectsSucceededCounter().increment();
                 receivedEvents.clear();
             } else {
                 LOG.info("S3 Select returned no events for S3 object {}", s3ObjectReference);
@@ -149,6 +136,8 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
             startRange = endRange;
             endRange += Math.min(MAX_S3_OBJECT_CHUNK_SIZE, objectSize - endRange);
         }
+
+        s3ObjectPluginMetrics.getS3ObjectsSucceededCounter().increment();
     }
 
     private Long getObjectSize(final S3ObjectReference s3ObjectReference) {
@@ -205,8 +194,10 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
                 .build();
     }
 
-    private void parseCompleteStreamFromResponseHeader(final S3ObjectReference s3ObjectReference,
-                                                       final BufferAccumulator<Record<Event>> bufferAccumulator, final InputStream stream) throws IOException {
+    private void parseCompleteStreamFromResponseHeader(final AcknowledgementSet acknowledgementSet,
+                                                       final S3ObjectReference s3ObjectReference,
+                                                       final BufferAccumulator<Record<Event>> bufferAccumulator,
+                                                       final InputStream stream) throws IOException {
         try (final CountingInputStream countingInputStream = new CountingInputStream(stream);
              final InputStreamReader inputStreamReader = new InputStreamReader(countingInputStream);
              final BufferedReader reader = new BufferedReader(inputStreamReader)) {
@@ -219,8 +210,9 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
                     try {
                         eventConsumer.accept(eventRecord.getData(), s3ObjectReference);
                         bufferAccumulator.add(eventRecord);
-                    } catch (final TimeoutException ex) {
-                        flushWithBackoff(bufferAccumulator);
+                        if (acknowledgementSet != null) {
+                            acknowledgementSet.add(eventRecord.getData());
+                        }
                     } catch (final Exception ex) {
                         LOG.error("Failed writing S3 objects to buffer due to: {}", ex.getMessage());
                     }
@@ -233,42 +225,6 @@ public class S3SelectObjectWorker implements S3ObjectHandler {
         } catch (Exception e) {
             throw new IOException(e);
         }
-    }
-
-    private boolean flushWithBackoff(final BufferAccumulator<Record<Event>> bufferAccumulator) {
-
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        long nextDelay = INITIAL_FLUSH_RETRY_DELAY_ON_IO_EXCEPTION.toMillis();
-        boolean flushedSuccessfully;
-
-        for (int retryCount = 0; retryCount < MAX_FLUSH_RETRIES_ON_IO_EXCEPTION; retryCount++) {
-            final ScheduledFuture<Boolean> flushBufferFuture = scheduledExecutorService.schedule(() -> {
-                try {
-                    bufferAccumulator.flush();
-                    return true;
-                } catch (final Exception e) {
-                    return false;
-                }
-            }, nextDelay, TimeUnit.MILLISECONDS);
-
-            try {
-                flushedSuccessfully = flushBufferFuture.get();
-                if (flushedSuccessfully) {
-                    LOG.info("Successfully flushed the buffer accumulator on retry attempt {}", retryCount + 1);
-                    scheduledExecutorService.shutdownNow();
-                    return true;
-                }
-            } catch (ExecutionException e) {
-                LOG.warn("Retrying of flushing the buffer accumulator hit an exception: {}", e.getMessage());
-            } catch (InterruptedException e) {
-                LOG.warn("Retrying of flushing the buffer accumulator was interrupted: {}", e.getMessage());
-            }
-        }
-
-
-        LOG.warn("Flushing the bufferAccumulator failed after {} attempts", S3SelectObjectWorker.MAX_FLUSH_RETRIES_ON_IO_EXCEPTION);
-        scheduledExecutorService.shutdownNow();
-        return false;
     }
 
     private JsonNode getJsonNode(String selectObjectOptionalString) throws JsonProcessingException {
