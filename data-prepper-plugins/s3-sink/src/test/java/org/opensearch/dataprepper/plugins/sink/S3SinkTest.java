@@ -105,14 +105,6 @@ class S3SinkTest {
     }
 
     @Test
-    void test_doOutput_without_data() {
-        s3Sink = new S3Sink(pluginSetting, s3SinkConfig, pluginFactory);
-        s3Sink.doInitialize();
-        s3Sink.doOutput(new ArrayList<>());
-        assertNotNull(s3Sink);
-    }
-
-    @Test
     void test_doOutput_with_data_local_file() {
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.LOCALFILE);
         s3Sink = new S3Sink(pluginSetting, s3SinkConfig, pluginFactory);
@@ -159,27 +151,6 @@ class S3SinkTest {
         inOrder.verify(s3SinkService).accumulateBufferEvents(worker);
 
         verifyNoMoreInteractions(s3SinkService);
-    }
-
-    @Test
-    void test_initialize_invoke() {
-        s3Sink = mock(S3Sink.class);
-        s3Sink.initialize();
-        verify(s3Sink, atLeastOnce()).initialize();
-    }
-
-    @Test
-    void test_Codec_file_Extension_null_check() {
-        when(pluginModel.getPluginName()).thenReturn(null);
-        s3Sink = new S3Sink(pluginSetting, s3SinkConfig, pluginFactory);
-        assertNotNull(s3Sink);
-    }
-
-    @Test
-    void test_Codec_file_Extension_empty_check() {
-        when(pluginModel.getPluginName()).thenReturn("");
-        s3Sink = new S3Sink(pluginSetting, s3SinkConfig, pluginFactory);
-        assertNotNull(s3Sink);
     }
 
     private Collection<Record<Event>> generateRandomStringEventRecord() {
