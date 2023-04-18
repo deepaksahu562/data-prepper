@@ -5,9 +5,7 @@
 
 package org.opensearch.dataprepper.plugins.sink.accumulator;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -86,6 +84,13 @@ class LocalFileBufferTest {
         assertNotNull(localFileBuffer);
         assertTrue(localFileBuffer.localFileAccumulate(generateSet()));
         verify(s3SinkService, never()).createS3Client();
+    }
+
+    @Test
+    void test_local_file_accumulate_with_s3Upload_fail() throws InterruptedException {
+        LocalFileBuffer localFileBuffer = mock(LocalFileBuffer.class);
+        assertNotNull(localFileBuffer);
+        assertFalse(localFileBuffer.localFileAccumulate (generateSet()));
     }
 
     @Test

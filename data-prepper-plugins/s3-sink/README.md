@@ -24,7 +24,7 @@ pipeline:
           name: bucket_name
           object_key:
             path_prefix: my-elb/%{yyyy}/%{MM}/%{dd}/
-            name_pattern: my-elb-%{yyyy-MM-dd'T'hh-mm-ss}
+            name_pattern: my-elb-%{yyyy-MM-dd'T'hh-mm-ss}.${extension}
         threshold:
           event_count: 2000
           maximum_size: 50mb
@@ -49,7 +49,7 @@ pipeline:
 
 - `path_prefix` (Optional) : path_prefix nothing but directory structure inside bucket in-order to store objects. Defaults to `none`.
 
-- `name_pattern` (Optional) : s3-bucket object name will be created based on following pattern (%{USER-DEFINED-PORTION}-%{EPOCH_SECONDS}-${RANDOM}.%{EXTENSION}). Defaults to `events-%{yyyy-MM-dd'T'hh-mm-ss}`.
+- `name_pattern` (Optional) : s3-bucket object name will be created based on following pattern (%{USER-DEFINED-PORTION}-%{EPOCH_SECONDS}-${RANDOM}.%{EXTENSION}). `json` is the default extension, If user is not providing any extension. Defaults to `events-%{yyyy-MM-dd'T'hh-mm-ss}.json`.
 
 - `event_count` (Required) : An integer value indicates the maximum number of events required to ingest into s3-bucket as part of threshold.
 
@@ -64,5 +64,5 @@ pipeline:
 
 This plugin is compatible with Java 8. See
 
-- [CONTRIBUTING](https://github.com/opensearch-project/data-prepper/blob/main/CONTRIBUTING.md) 
+- [CONTRIBUTING](https://github.com/opensearch-project/data-prepper/blob/main/CONTRIBUTING.md)
 - [monitoring](https://github.com/opensearch-project/data-prepper/blob/main/docs/monitoring.md)
