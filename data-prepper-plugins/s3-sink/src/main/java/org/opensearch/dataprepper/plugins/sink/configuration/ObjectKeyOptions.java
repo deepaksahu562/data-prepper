@@ -16,9 +16,6 @@ public class ObjectKeyOptions {
     @JsonProperty("path_prefix")
     private String pathPrefix;
 
-    @JsonProperty("name_pattern")
-    private String namePattern = DEFAULT_OBJECT_NAME_PATTERN;
-
     /**
      * S3 index path configuration Option
      */
@@ -30,6 +27,6 @@ public class ObjectKeyOptions {
      * Read s3 object index file pattern configuration
      */
     public String getNamePattern() {
-        return namePattern;
+        return DEFAULT_OBJECT_NAME_PATTERN;
     }
 }

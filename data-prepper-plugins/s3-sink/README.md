@@ -24,7 +24,6 @@ pipeline:
           name: bucket_name
           object_key:
             path_prefix: my-elb/%{yyyy}/%{MM}/%{dd}/
-            name_pattern: my-elb-%{yyyy-MM-dd'T'hh-mm-ss}.${extension}
         threshold:
           event_count: 2000
           maximum_size: 50mb
@@ -48,8 +47,6 @@ pipeline:
 - `object_key` (Optional) : It contains `path_prefix` and `file_pattern`. Defaults to s3 object `events-%{yyyy-MM-dd'T'hh-mm-ss}` inside bucket root directory.
 
 - `path_prefix` (Optional) : path_prefix nothing but directory structure inside bucket in-order to store objects. Defaults to `none`.
-
-- `name_pattern` (Optional) : s3-bucket object name will be created based on following pattern (%{USER-DEFINED-PORTION}-%{EPOCH_SECONDS}-${RANDOM}.%{EXTENSION}). `json` is the default extension, If user is not providing any extension. Defaults to `events-%{yyyy-MM-dd'T'hh-mm-ss}.json`.
 
 - `event_count` (Required) : An integer value indicates the maximum number of events required to ingest into s3-bucket as part of threshold.
 
