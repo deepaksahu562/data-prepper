@@ -6,12 +6,14 @@
 package org.opensearch.dataprepper.plugins.sink;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.model.record.Record;
+import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -26,36 +28,26 @@ public class S3SinkService {
 
     private static final Logger LOG = LoggerFactory.getLogger(S3SinkService.class);
     private final S3SinkConfig s3SinkConfig;
-    private static final int EVENT_QUEUE_SIZE = 10000000;
-    private BlockingQueue<Event> eventQueue;
     private final Lock reentrantLock;
+    private final S3SinkWorker sinkWorker;
 
     /**
      * @param s3SinkConfig s3 sink related configuration.
+     * @param codec parser
      */
-    public S3SinkService(final S3SinkConfig s3SinkConfig) {
+    public S3SinkService(final S3SinkConfig s3SinkConfig, final Codec codec) {
         this.s3SinkConfig = s3SinkConfig;
-        eventQueue = new ArrayBlockingQueue<>(EVENT_QUEUE_SIZE);
         reentrantLock = new ReentrantLock();
+        sinkWorker = new S3SinkWorker(createS3Client(), s3SinkConfig, codec);
     }
 
     /**
-     * @param records received buffered records add into queue.
+     * @param events received buffered records add into queue.
      */
-    public void processRecords(Collection<Record<Event>> records) {
-        for (final Record<Event> recordData : records) {
-            Event event = recordData.getData();
-            eventQueue.add(event);
-        }
-    }
-
-    /**
-     * @param worker {@link S3SinkWorker} accumulate buffer events
-     */
-    public void accumulateBufferEvents(S3SinkWorker worker) {
+    public void accumulateBufferEvents(final List<Event> events) {
         reentrantLock.lock();
         try {
-            worker.bufferAccumulator(eventQueue);
+            sinkWorker.doAccumulator(events);
         } catch (Exception e) {
             LOG.error("Exception while accumulate buffer events: ", e);
         } finally {

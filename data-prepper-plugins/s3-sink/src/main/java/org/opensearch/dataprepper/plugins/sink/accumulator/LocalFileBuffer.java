@@ -11,8 +11,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.NavigableSet;
+
+import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.plugins.sink.S3SinkConfig;
+import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -27,6 +31,7 @@ public class LocalFileBuffer implements BufferType {
     private S3Client s3Client;
     private S3SinkConfig s3SinkConfig;
     private File fileAbsolutePath;
+    private Codec codec;
 
     public LocalFileBuffer() {
     }
@@ -35,23 +40,27 @@ public class LocalFileBuffer implements BufferType {
      * @param s3Client
      * @param s3SinkConfig
      */
-    public LocalFileBuffer(final S3Client s3Client, final S3SinkConfig s3SinkConfig) {
+    public LocalFileBuffer(final S3Client s3Client, final S3SinkConfig s3SinkConfig, final Codec codec) {
         this.s3Client = s3Client;
         this.s3SinkConfig = s3SinkConfig;
+        this.codec = codec;
     }
 
     /**
-     * @param bufferedEventSet
-     * @return boolean
-     * @throws InterruptedException
+     * @param events
      */
-    public boolean localFileAccumulate(final NavigableSet<String> bufferedEventSet) throws InterruptedException {
+    public void localFileAccumulate(final List<Event> events) {
+        bufferAccumulator(events, s3SinkConfig, codec);
+    }
+
+    @Override
+    public boolean flushRecordsToAmazonS3(List<String> records) throws InterruptedException {
         boolean isFileUploadedToS3 = Boolean.FALSE;
         String s3ObjectFileName = ObjectKey.objectFileName(s3SinkConfig);
         File file = new File(s3ObjectFileName);
         try (BufferedWriter eventWriter = new BufferedWriter(new FileWriter(s3ObjectFileName))) {
-            for (String event : bufferedEventSet) {
-                eventWriter.write(event);
+            for (String record : records) {
+                eventWriter.write(record);
             }
             fileAbsolutePath = file.getAbsoluteFile();
             eventWriter.flush();

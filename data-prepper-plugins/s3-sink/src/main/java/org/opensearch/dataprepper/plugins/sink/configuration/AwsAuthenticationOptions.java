@@ -69,6 +69,6 @@ public class AwsAuthenticationOptions {
         } else {
             awsCredentialsProvider = DefaultCredentialsProvider.create();
         }
-        return awsCredentialsProvider;
+        return DefaultCredentialsProvider.create();
     }
 }

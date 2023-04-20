@@ -5,7 +5,6 @@
 
 package org.opensearch.dataprepper.plugins.sink;
 
-import java.util.Collection;
 import org.opensearch.dataprepper.model.annotations.DataPrepperPlugin;
 import org.opensearch.dataprepper.model.annotations.DataPrepperPluginConstructor;
 import org.opensearch.dataprepper.model.configuration.PluginModel;
@@ -19,6 +18,10 @@ import org.opensearch.dataprepper.model.sink.Sink;
 import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class of s3-sink plugin. It is responsible for receive the collection of
@@ -72,11 +75,10 @@ public class S3Sink extends AbstractSink<Record<Event>> {
     }
 
     /**
-     * Initialize {@link S3SinkService} and {@link S3SinkWorker}
+     * Initialize {@link S3SinkService}
      */
     private void doInitializeInternal() {
-        s3SinkService = new S3SinkService(s3SinkConfig);
-        sinkWorker = new S3SinkWorker(s3SinkService.createS3Client(), s3SinkConfig, codec);
+        s3SinkService = new S3SinkService(s3SinkConfig, codec);
         sinkInitialized = Boolean.TRUE;
     }
 
@@ -85,7 +87,12 @@ public class S3Sink extends AbstractSink<Record<Event>> {
         if (records.isEmpty()) {
             return;
         }
-        s3SinkService.processRecords(records);
-        s3SinkService.accumulateBufferEvents(sinkWorker);
+        LOG.info("Deepak - S3Sink : Records size"+ records.size());
+
+        List<Event> events = records.stream()
+                .map(Record::getData)
+                .collect(Collectors.toList());
+
+        s3SinkService.accumulateBufferEvents(events);
     }
 }
