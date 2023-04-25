@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.opensearch.dataprepper.model.event.Event;
 import org.opensearch.dataprepper.model.record.Record;
 import org.opensearch.dataprepper.model.types.ByteCount;
@@ -24,8 +23,8 @@ import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * Class responsible for taking an {@link S3SinkConfig} and creating all the necessary
- * {@link S3Client} and event accumulate operations.
+ * Class responsible for create {@link S3Client} object, check thresholds,
+ * get new buffer and write records into buffer.
  */
 public class S3SinkService {
 
@@ -61,25 +60,26 @@ public class S3SinkService {
      */
     void output(Collection<Record<Event>> records) {
         reentrantLock.lock();
-        // TODO: You can lock this whole method for now. It is probably the simplest approach.
-
-
         final String bucket = s3SinkConfig.getBucketOptions().getBucketName();
-
         if (currentBuffer == null) {
             currentBuffer = bufferFactory.getBuffer();
         }
-
         try {
             for (Record<Event> record : records) {
                 final Event event = record.getData();
                 final String encodedEvent;
                 encodedEvent = codec.parse(event);
-
                 final byte[] encodedBytes = encodedEvent.getBytes();
-
                 if (willExceedThreshold()) {
-                    currentBuffer.flushToS3(s3Client, bucket, generateKey());
+                    LOG.info("Snapshot info : Byte_capacity = {} Bytes," +
+                            " Event_count = {} Records & Event_collection_duration = {} Sec",
+                            byteCapacity.getBytes(), currentBuffer.getEventCount(), currentBuffer.getDuration());
+                    boolean isFileUploadedToS3 = currentBuffer.flushToS3(s3Client, bucket, generateKey());
+                    if (isFileUploadedToS3) {
+                        LOG.info("Snapshot uploaded successfully");
+                    } else {
+                        LOG.info("Snapshot upload failed");
+                    }
                     currentBuffer = bufferFactory.getBuffer();
                 }
                 currentBuffer.writeEvent(encodedBytes);
@@ -90,7 +90,7 @@ public class S3SinkService {
         reentrantLock.unlock();
     }
 
-    protected String generateKey(){
+    protected String generateKey() {
         final String pathPrefix = ObjectKey.buildingPathPrefix(s3SinkConfig);
         final String namePattern = ObjectKey.objectFileName(s3SinkConfig);
         return (!pathPrefix.isEmpty()) ? pathPrefix + namePattern : namePattern;
@@ -98,9 +98,12 @@ public class S3SinkService {
 
     protected boolean willExceedThreshold() {
         if (numEvents > 0) {
-            return currentBuffer.getEventCount() + 1 > numEvents || currentBuffer.getDuration() > duration || currentBuffer.getSize() > byteCapacity.getBytes();
+            return currentBuffer.getEventCount() + 1 > numEvents ||
+                    currentBuffer.getDuration() > duration ||
+                    currentBuffer.getSize() > byteCapacity.getBytes();
         } else {
-            return currentBuffer.getDuration() > duration || currentBuffer.getSize() > byteCapacity.getBytes();
+            return currentBuffer.getDuration() > duration ||
+                    currentBuffer.getSize() > byteCapacity.getBytes();
         }
     }
 
@@ -109,6 +112,9 @@ public class S3SinkService {
      */
     protected S3Client createS3Client() {
         LOG.info("Creating S3 client");
-        return S3Client.builder().region(s3SinkConfig.getAwsAuthenticationOptions().getAwsRegion()).credentialsProvider(s3SinkConfig.getAwsAuthenticationOptions().authenticateAwsConfiguration()).overrideConfiguration(ClientOverrideConfiguration.builder().retryPolicy(RetryPolicy.builder().numRetries(s3SinkConfig.getMaxConnectionRetries()).build()).build()).build();
+        return S3Client.builder().region(s3SinkConfig.getAwsAuthenticationOptions().getAwsRegion())
+                .credentialsProvider(s3SinkConfig.getAwsAuthenticationOptions().authenticateAwsConfiguration())
+                .overrideConfiguration(ClientOverrideConfiguration.builder().retryPolicy(RetryPolicy.builder()
+                        .numRetries(s3SinkConfig.getMaxConnectionRetries()).build()).build()).build();
     }
 }

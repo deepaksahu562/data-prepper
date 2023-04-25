@@ -16,16 +16,12 @@ public interface Buffer {
 
     /**
      * Gets the current size of the buffer. This should be the number of bytes.
-     *
-     * @return
      */
     long getSize();
-
     int getEventCount();
 
     long getDuration();
 
-    void flushToS3(S3Client s3Client, String bucket, String key);
-
+    boolean flushToS3(S3Client s3Client, String bucket, String key);
     void writeEvent(byte[] bytes) throws IOException;
 }

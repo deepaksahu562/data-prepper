@@ -70,7 +70,7 @@ public class AwsAuthenticationOptions {
                     .build();
 
             AssumeRoleRequest.Builder assumeRoleRequestBuilder = AssumeRoleRequest.builder()
-                    .roleSessionName("S3-Source-" + UUID.randomUUID())
+                    .roleSessionName("S3-Sink-" + UUID.randomUUID())
                     .roleArn(awsStsRoleArn);
             if(awsStsHeaderOverrides != null && !awsStsHeaderOverrides.isEmpty()) {
                 assumeRoleRequestBuilder = assumeRoleRequestBuilder
@@ -87,7 +87,6 @@ public class AwsAuthenticationOptions {
             awsCredentialsProvider = DefaultCredentialsProvider.create();
         }
 
-        return awsCredentialsProvider;
+        return DefaultCredentialsProvider.create();
     }
 }
-

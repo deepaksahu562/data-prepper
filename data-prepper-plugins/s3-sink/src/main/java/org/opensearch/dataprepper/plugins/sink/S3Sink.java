@@ -19,7 +19,6 @@ import org.opensearch.dataprepper.plugins.sink.accumulator.*;
 import org.opensearch.dataprepper.plugins.sink.codec.Codec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 
 /**
@@ -34,12 +33,12 @@ public class S3Sink extends AbstractSink<Record<Event>> {
     private final Codec codec;
     private volatile boolean sinkInitialized;
     private S3SinkService s3SinkService;
-    private BufferFactory bufferFactory;
+    private final BufferFactory bufferFactory;
 
     /**
-     * @param pluginSetting
-     * @param s3SinkConfig
-     * @param pluginFactory
+     * @param pluginSetting dp plugin settings
+     * @param s3SinkConfig s3 sink related configurations.
+     * @param pluginFactory dp plugin factory
      */
     @DataPrepperPluginConstructor
     public S3Sink(final PluginSetting pluginSetting, final S3SinkConfig s3SinkConfig,
@@ -87,6 +86,9 @@ public class S3Sink extends AbstractSink<Record<Event>> {
         sinkInitialized = Boolean.TRUE;
     }
 
+    /**
+     * @param records Records to be output
+     */
     @Override
     public void doOutput(final Collection<Record<Event>> records) {
         if (records.isEmpty()) {
