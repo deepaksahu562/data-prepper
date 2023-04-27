@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 /**
  * Class responsible for creation of s3 key pattern based on date time stamp
  */
-public class S3ObjectIndex {
+public class S3ObjectIndexUtility {
 
     private static final String TIME_PATTERN_STARTING_SYMBOLS = "\\%{";
 
@@ -33,24 +33,24 @@ public class S3ObjectIndex {
 
     private static final ZoneId UTC_ZONE_ID = ZoneId.of(TimeZone.getTimeZone("UTC").getID());
 
-    S3ObjectIndex() {
+    S3ObjectIndexUtility() {
     }
 
     /**
      * Create Object Name with date,time and UniqueID prepended.
      */
     public static String getObjectNameWithDateTimeId(final String indexAlias) {
-        DateTimeFormatter dateFormatter = getDatePatternFormatter(indexAlias);
+        DateTimeFormatter dateFormatter = validateAndGetDateTimeFormatter(indexAlias);
         String suffix = (dateFormatter != null) ? dateFormatter.format(getCurrentUtcTime()) : "";
-        return indexAlias.replaceAll(TIME_PATTERN_REGULAR_EXPRESSION, "") + suffix + "-" + getTimeNanos() + "-"
-                + UUID.randomUUID();
+        return indexAlias.replaceAll(TIME_PATTERN_REGULAR_EXPRESSION, suffix + "-" + getTimeNanos() + "-"
+                + UUID.randomUUID());
     }
 
     /**
      * Create Object path prefix.
      */
     public static String getObjectPathPrefix(final String indexAlias) {
-        DateTimeFormatter dateFormatter = getDatePatternFormatter(indexAlias);
+        DateTimeFormatter dateFormatter = validateAndGetDateTimeFormatter(indexAlias);
         String suffix = (dateFormatter != null) ? dateFormatter.format(getCurrentUtcTime()) : "";
         return indexAlias.replaceAll(TIME_PATTERN_REGULAR_EXPRESSION, "") + suffix;
     }
@@ -68,7 +68,7 @@ public class S3ObjectIndex {
     /**
      * Validate the index with the regular expression pattern. Throws exception if validation fails
      */
-    public static DateTimeFormatter getDatePatternFormatter(final String indexAlias) {
+    public static DateTimeFormatter validateAndGetDateTimeFormatter(final String indexAlias) {
         final Pattern pattern = Pattern.compile(TIME_PATTERN_INTERNAL_EXTRACTOR_REGULAR_EXPRESSION);
         final Matcher timePatternMatcher = pattern.matcher(indexAlias);
         if (timePatternMatcher.find()) {

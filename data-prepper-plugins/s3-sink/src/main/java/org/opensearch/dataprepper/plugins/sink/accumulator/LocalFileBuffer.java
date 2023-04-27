@@ -82,9 +82,9 @@ public class LocalFileBuffer implements Buffer {
             try {
                 boolean isLocalFileDeleted = Files.deleteIfExists(Paths.get(localFile.toString()));
                 if (isLocalFileDeleted) {
-                    LOG.info("Local file deleted successfully {}", localFile);
+                    LOG.info("Local file has been deleted successfully {}", localFile);
                 } else {
-                    LOG.warn("Local file not deleted {}", localFile);
+                    LOG.warn("Local file has not been deleted {}", localFile);
                 }
             } catch (IOException e) {
                 LOG.error("Local file unable to deleted {}", localFile, e);

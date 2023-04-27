@@ -52,7 +52,7 @@ public class S3SinkService {
 
         numEvents = s3SinkConfig.getThresholdOptions().getEventCount();
         byteCapacity = s3SinkConfig.getThresholdOptions().getMaximumSize();
-        duration = s3SinkConfig.getThresholdOptions().getEventCollect().getSeconds();
+        duration = s3SinkConfig.getThresholdOptions().getEventCollectTimeOut().getSeconds();
     }
 
     /**
@@ -66,6 +66,7 @@ public class S3SinkService {
         }
         try {
             for (Record<Event> record : records) {
+
                 final Event event = record.getData();
                 final String encodedEvent;
                 encodedEvent = codec.parse(event);
@@ -74,8 +75,8 @@ public class S3SinkService {
                     LOG.info("Snapshot info : Byte_capacity = {} Bytes," +
                             " Event_count = {} Records & Event_collection_duration = {} Sec",
                             byteCapacity.getBytes(), currentBuffer.getEventCount(), currentBuffer.getDuration());
-                    boolean isFileUploadedToS3 = currentBuffer.flushToS3(s3Client, bucket, generateKey());
-                    if (isFileUploadedToS3) {
+                    boolean isUploadedToS3 = currentBuffer.flushToS3(s3Client, bucket, generateKey());
+                    if (isUploadedToS3) {
                         LOG.info("Snapshot uploaded successfully");
                     } else {
                         LOG.info("Snapshot upload failed");
@@ -84,8 +85,8 @@ public class S3SinkService {
                 }
                 currentBuffer.writeEvent(encodedBytes);
             }
-        } catch (IOException e) {
-            LOG.error("Exception ", e);
+        } catch (NullPointerException | IOException e) {
+            LOG.error("Exception while write event into buffer :", e);
         }
         reentrantLock.unlock();
     }
@@ -96,7 +97,7 @@ public class S3SinkService {
         return (!pathPrefix.isEmpty()) ? pathPrefix + namePattern : namePattern;
     }
 
-    protected boolean willExceedThreshold() {
+    private boolean willExceedThreshold() {
         if (numEvents > 0) {
             return currentBuffer.getEventCount() + 1 > numEvents ||
                     currentBuffer.getDuration() > duration ||
@@ -110,7 +111,7 @@ public class S3SinkService {
     /**
      * @return {@link S3Client}
      */
-    protected S3Client createS3Client() {
+    public S3Client createS3Client() {
         LOG.info("Creating S3 client");
         return S3Client.builder().region(s3SinkConfig.getAwsAuthenticationOptions().getAwsRegion())
                 .credentialsProvider(s3SinkConfig.getAwsAuthenticationOptions().authenticateAwsConfiguration())

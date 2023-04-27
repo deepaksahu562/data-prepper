@@ -35,7 +35,6 @@ class AwsAuthenticationOptionsTest {
         ReflectivelySetField.setField(AwsAuthenticationOptions.class,awsAuthenticationOptions, "awsRegion", null);
         assertThat(awsAuthenticationOptions.getAwsRegion(), nullValue());
     }
-
     @Test
     void getAwsRegion_returns_Region_of() throws NoSuchFieldException, IllegalAccessException {
         final String regionString = UUID.randomUUID().toString();

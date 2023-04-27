@@ -46,17 +46,17 @@ public class InMemoryBuffer implements Buffer {
 
     @Override
     public boolean flushToS3(S3Client s3Client, String bucket, String key) {
-        boolean isFileUploadedToS3 = Boolean.FALSE;
+        boolean isUploadedToS3 = Boolean.FALSE;
         final byte[] byteArray = byteArrayOutputStream.toByteArray();
         try {
             s3Client.putObject(
                     PutObjectRequest.builder().bucket(bucket).key(key).build(),
                     RequestBody.fromBytes(byteArray));
-            isFileUploadedToS3 = Boolean.TRUE;
+            isUploadedToS3 = Boolean.TRUE;
         }catch (Exception e){
-            LOG.error("Exception while flush data to Amazon s3 bucket :", e);
+            LOG.error("Exception while flushing data to Amazon s3 bucket :", e);
         }
-        return isFileUploadedToS3;
+        return isUploadedToS3;
     }
     @Override
     public void writeEvent(byte[] bytes) throws IOException {
