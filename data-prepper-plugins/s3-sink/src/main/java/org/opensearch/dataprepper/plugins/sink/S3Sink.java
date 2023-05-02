@@ -51,7 +51,11 @@ public class S3Sink extends AbstractSink<Record<Event>> {
         codec = pluginFactory.loadPlugin(Codec.class, codecPluginSettings);
         sinkInitialized = Boolean.FALSE;
 
-        bufferFactory = new InMemoryBufferFactory();
+        if (s3SinkConfig.getBufferType().equals(BufferTypeOptions.LOCALFILE)) {
+            bufferFactory = new LocalFileBufferFactory();
+        } else {
+            bufferFactory = new InMemoryBufferFactory();
+        }
     }
 
     @Override
