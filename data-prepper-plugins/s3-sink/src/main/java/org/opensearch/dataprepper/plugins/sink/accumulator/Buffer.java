@@ -6,7 +6,6 @@
 package org.opensearch.dataprepper.plugins.sink.accumulator;
 
 import software.amazon.awssdk.services.s3.S3Client;
-
 import java.io.IOException;
 
 /**

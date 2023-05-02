@@ -17,6 +17,9 @@ import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A buffer can hold local file data and flushing it to S3.
+ */
 public class LocalFileBuffer implements Buffer {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalFileBuffer.class);
@@ -53,6 +56,14 @@ public class LocalFileBuffer implements Buffer {
     public long getDuration(){
         return watch.getTime(TimeUnit.SECONDS);
     }
+
+    /**
+     * Upload accumulated data to amazon s3
+     * @param s3Client s3 client object.
+     * @param bucket bucket name.
+     * @param key s3 object key path.
+     * @return boolean based on file upload status.
+     */
     @Override
     public boolean flushToS3(S3Client s3Client, String bucket, String key) {
         boolean isFileUploadedToS3 = Boolean.FALSE;
@@ -70,6 +81,11 @@ public class LocalFileBuffer implements Buffer {
         return isFileUploadedToS3;
     }
 
+    /**
+     * write byte array to output stream.
+     * @param bytes byte array.
+     * @throws IOException while writing to output stream fails.
+     */
     @Override
     public void writeEvent(byte[] bytes) throws IOException {
         bufferedOutputStream.write(bytes);
@@ -77,6 +93,9 @@ public class LocalFileBuffer implements Buffer {
         eventCount++;
     }
 
+    /**
+     * Remove the local temp file after flushing data to s3.
+     */
     private void removeTemporaryFile() {
         if (localFile != null) {
             try {

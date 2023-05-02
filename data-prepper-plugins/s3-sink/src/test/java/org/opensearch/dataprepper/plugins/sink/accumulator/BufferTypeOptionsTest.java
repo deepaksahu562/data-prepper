@@ -27,7 +27,7 @@ class BufferTypeOptionsTest {
     }
 
     @Test
-    void omOptionValue_test() {
+    void fromOptionValue_test() {
         BufferTypeOptions bufferTypeOptions = BufferTypeOptions.fromOptionValue("in_memory");
         assertNotNull(bufferTypeOptions);
         assertThat(bufferTypeOptions.toString(), equalTo("INMEMORY"));

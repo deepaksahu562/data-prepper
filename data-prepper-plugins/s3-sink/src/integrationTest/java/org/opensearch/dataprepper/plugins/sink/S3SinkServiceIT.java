@@ -85,7 +85,7 @@ class S3SinkServiceIT {
     }
 
     @Test
-    void verify_flushed_records_into_amazon_s3_bucket() {
+    void verify_flushed_records_into_s3_bucket() {
 
         int s3ObjectCountBeforeIngest = gets3ObjectCount();
         S3SinkService s3SinkService = createObjectUnderTest();
@@ -114,7 +114,7 @@ class S3SinkServiceIT {
     }
 
     private Collection<Record<Event>> setEventQueue() {
-        final Collection<Record<Event>> jsonObjects = new LinkedList<Record<Event>>();
+        final Collection<Record<Event>> jsonObjects = new LinkedList<>();
         for (int i = 0; i < 15; i++)
             jsonObjects.add(createRecord());
         return jsonObjects;

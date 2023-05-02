@@ -36,9 +36,9 @@ public class S3Sink extends AbstractSink<Record<Event>> {
     private final BufferFactory bufferFactory;
 
     /**
-     * @param pluginSetting dp plugin settings
-     * @param s3SinkConfig s3 sink related configurations.
-     * @param pluginFactory dp plugin factory
+     * @param pluginSetting dp plugin settings.
+     * @param s3SinkConfig s3 sink configurations.
+     * @param pluginFactory dp plugin factory.
      */
     @DataPrepperPluginConstructor
     public S3Sink(final PluginSetting pluginSetting, final S3SinkConfig s3SinkConfig,

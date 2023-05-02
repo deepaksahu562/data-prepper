@@ -91,12 +91,20 @@ public class S3SinkService {
         reentrantLock.unlock();
     }
 
+    /**
+     * Generate the s3 object path prefix & object file name.
+     * @return object key path.
+     */
     protected String generateKey() {
         final String pathPrefix = ObjectKey.buildingPathPrefix(s3SinkConfig);
         final String namePattern = ObjectKey.objectFileName(s3SinkConfig);
         return (!pathPrefix.isEmpty()) ? pathPrefix + namePattern : namePattern;
     }
 
+    /**
+     * Check threshold limits.
+     * @return boolean value whether the threshold are met.
+     */
     private boolean willExceedThreshold() {
         if (numEvents > 0) {
             return currentBuffer.getEventCount() + 1 > numEvents ||
@@ -109,6 +117,7 @@ public class S3SinkService {
     }
 
     /**
+     * create s3 client instance.
      * @return {@link S3Client}
      */
     public S3Client createS3Client() {
