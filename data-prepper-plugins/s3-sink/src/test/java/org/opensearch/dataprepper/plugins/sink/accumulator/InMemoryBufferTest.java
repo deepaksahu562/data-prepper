@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 class InMemoryBufferTest {
 
     private S3SinkConfig s3SinkConfig;
+    private InMemoryBuffer inMemoryBuffer;
     private AwsAuthenticationOptions awsAuthenticationOptions;
     private S3Client s3Client;
     private AwsCredentialsProvider awsCredentialsProvider;
@@ -39,7 +40,7 @@ class InMemoryBufferTest {
         s3Client = mock(S3Client.class);
         bucketOptions = mock(BucketOptions.class);
         objectKeyOptions = mock(ObjectKeyOptions.class);
-        awsCredentialsProvider= mock(AwsCredentialsProvider.class);
+        awsCredentialsProvider = mock(AwsCredentialsProvider.class);
         awsAuthenticationOptions = mock(AwsAuthenticationOptions.class);
         thresholdOptions = mock(ThresholdOptions.class);
 
@@ -49,52 +50,48 @@ class InMemoryBufferTest {
         when(s3SinkConfig.getThresholdOptions().getMaximumSize()).thenReturn(ByteCount.parse("1kb"));
         when(s3SinkConfig.getThresholdOptions().getEventCollectTimeOut()).thenReturn(Duration.ofSeconds(5));
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.INMEMORY);
-
         when(s3SinkConfig.getBucketOptions()).thenReturn(bucketOptions);
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions()).thenReturn(objectKeyOptions);
         when(s3SinkConfig.getBucketOptions().getBucketName()).thenReturn("dataprepper");
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn("logdata/");
-
-
         when(awsAuthenticationOptions.getAwsRegion()).thenReturn(Region.of("us-east-1"));
         when(awsAuthenticationOptions.authenticateAwsConfiguration()).thenReturn(awsCredentialsProvider);
-
         when(s3SinkConfig.getAwsAuthenticationOptions()).thenReturn(awsAuthenticationOptions);
     }
 
     @Test
     void test_with_write_event_into_buffer() throws IOException {
-        InMemoryBuffer inMemoryBuffer = new InMemoryBuffer();
+        inMemoryBuffer = new InMemoryBuffer();
 
         while (inMemoryBuffer.getEventCount() < 55) {
             inMemoryBuffer.writeEvent(generateByteArray());
         }
         assertThat(inMemoryBuffer.getSize(), greaterThan(1l));
-        assertThat(inMemoryBuffer.getEventCount(),   equalTo(55));
+        assertThat(inMemoryBuffer.getEventCount(), equalTo(55));
         assertThat(inMemoryBuffer.getDuration(), greaterThanOrEqualTo(0L));
 
     }
 
     @Test
-    void test_without_write_event_into_buffer(){
-        InMemoryBuffer inMemoryBuffer = new InMemoryBuffer();
+    void test_without_write_event_into_buffer() {
+        inMemoryBuffer = new InMemoryBuffer();
         assertThat(inMemoryBuffer.getSize(), equalTo(0L));
-        assertThat(inMemoryBuffer.getEventCount(),  equalTo(0));
+        assertThat(inMemoryBuffer.getEventCount(), equalTo(0));
         assertThat(inMemoryBuffer.getDuration(), lessThanOrEqualTo(0L));
 
     }
 
     @Test
-    void test_uploadedToS3_success(){
-        InMemoryBuffer inMemoryBuffer = new InMemoryBuffer();
+    void test_uploadedToS3_success() {
+        inMemoryBuffer = new InMemoryBuffer();
         Assertions.assertNotNull(inMemoryBuffer);
         boolean isUploadedToS3 = inMemoryBuffer.flushToS3(s3Client, "data-prepper", "log.txt");
         Assertions.assertTrue(isUploadedToS3);
     }
 
     @Test
-    void test_uploadedToS3_failure(){
-        InMemoryBuffer inMemoryBuffer = new InMemoryBuffer();
+    void test_uploadedToS3_failure() {
+        inMemoryBuffer = new InMemoryBuffer();
         S3SinkService s3SinkService = new S3SinkService(s3SinkConfig, null, null);
         S3Client s3Client = s3SinkService.createS3Client();
         Assertions.assertNotNull(inMemoryBuffer);
@@ -102,10 +99,10 @@ class InMemoryBufferTest {
         Assertions.assertFalse(isUploadedToS3);
     }
 
-    private byte[] generateByteArray(){
+    private byte[] generateByteArray() {
         byte[] bytes = new byte[1000];
         for (int i = 0; i < 1000; i++) {
-            bytes[i] = (byte)i;
+            bytes[i] = (byte) i;
         }
         return bytes;
     }

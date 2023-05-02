@@ -58,28 +58,22 @@ class S3SinkTest {
         codec = mock(JsonCodec.class);
         objectKeyOptions = mock(ObjectKeyOptions.class);
         bucketOptions = mock(BucketOptions.class);
-
         pluginSetting = mock(PluginSetting.class);
         pluginModel = mock(PluginModel.class);
         pluginFactory = mock(PluginFactory.class);
 
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.INMEMORY);
-
         when(s3SinkConfig.getThresholdOptions()).thenReturn(thresholdOptions);
         when(s3SinkConfig.getThresholdOptions().getEventCount()).thenReturn(100);
         when(s3SinkConfig.getThresholdOptions().getMaximumSize()).thenReturn(ByteCount.parse("1kb"));
         when(s3SinkConfig.getThresholdOptions().getEventCollectTimeOut()).thenReturn(Duration.ofSeconds(5));
-
         when(objectKeyOptions.getNamePattern()).thenReturn("my-elb-%{yyyy-MM-dd'T'hh-mm-ss}");
-
         when(s3SinkConfig.getAwsAuthenticationOptions()).thenReturn(awsAuthenticationOptions);
         when(awsAuthenticationOptions.getAwsRegion()).thenReturn(Region.of("us-east-1"));
         when(awsAuthenticationOptions.authenticateAwsConfiguration()).thenReturn(awsCredentialsProvider);
-
         when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
         when(pluginModel.getPluginName()).thenReturn("json");
         when(pluginFactory.loadPlugin(any(), any())).thenReturn(codec);
-
         when(pluginSetting.getName()).thenReturn("s3");
         when(pluginSetting.getPipelineName()).thenReturn("S3-sink-pipeline");
     }
@@ -109,7 +103,7 @@ class S3SinkTest {
     }
 
     @Test
-    void test_doOutput_with_empty_records(){
+    void test_doOutput_with_empty_records() {
         when(s3SinkConfig.getBucketOptions()).thenReturn(bucketOptions);
         when(s3SinkConfig.getBucketOptions().getBucketName()).thenReturn("dataprepper");
         s3Sink = new S3Sink(pluginSetting, s3SinkConfig, pluginFactory);
@@ -118,6 +112,7 @@ class S3SinkTest {
         Collection<Record<Event>> records = new ArrayList<>();
         s3Sink.doOutput(records);
     }
+
     private Collection<Record<Event>> generateRandomStringEventRecord() {
 
         Collection<Record<Event>> records = new ArrayList<>();

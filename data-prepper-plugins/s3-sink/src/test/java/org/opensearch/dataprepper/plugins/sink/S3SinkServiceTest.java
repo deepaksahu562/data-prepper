@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TimeZone;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opensearch.dataprepper.model.configuration.PluginModel;
@@ -79,16 +81,13 @@ class S3SinkServiceTest {
         when(s3SinkConfig.getThresholdOptions().getMaximumSize()).thenReturn(ByteCount.parse("1kb"));
         when(s3SinkConfig.getThresholdOptions().getEventCollectTimeOut()).thenReturn(Duration.ofSeconds(5));
         when(s3SinkConfig.getBufferType()).thenReturn(BufferTypeOptions.INMEMORY);
-
         when(s3SinkConfig.getBucketOptions()).thenReturn(bucketOptions);
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions()).thenReturn(objectKeyOptions);
         when(s3SinkConfig.getBucketOptions().getBucketName()).thenReturn("dataprepper");
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn("logdata/");
-
         when(s3SinkConfig.getAwsAuthenticationOptions()).thenReturn(awsAuthenticationOptions);
         when(awsAuthenticationOptions.getAwsRegion()).thenReturn(Region.of("us-east-1"));
         when(awsAuthenticationOptions.authenticateAwsConfiguration()).thenReturn(awsCredentialsProvider);
-
         when(s3SinkConfig.getCodec()).thenReturn(pluginModel);
         when(pluginModel.getPluginName()).thenReturn("json");
         when(pluginFactory.loadPlugin(Codec.class, pluginSetting)).thenReturn(codec);
@@ -110,7 +109,7 @@ class S3SinkServiceTest {
     }
 
     @Test
-    void test_generateKey_with_general_prefix(){
+    void test_generateKey_with_general_prefix() {
         String pathPrefix = "events/";
         when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn(pathPrefix);
         S3SinkService s3SinkService = new S3SinkService(s3SinkConfig, bufferFactory, codec);
@@ -121,7 +120,7 @@ class S3SinkServiceTest {
     }
 
     @Test
-    void test_generateKey_with_date_prefix(){
+    void test_generateKey_with_date_prefix() {
         String pathPrefix = "logdata/";
         String datePattern = "%{yyyy}/%{MM}/%{dd}/";
 
@@ -130,12 +129,12 @@ class S3SinkServiceTest {
                 .withZoneSameInstant(ZoneId.of(TimeZone.getTimeZone("UTC").getID()));
         String dateString = fomatter.format(zdt);
 
-        when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn(pathPrefix+datePattern);
+        when(s3SinkConfig.getBucketOptions().getObjectKeyOptions().getPathPrefix()).thenReturn(pathPrefix + datePattern);
         S3SinkService s3SinkService = new S3SinkService(s3SinkConfig, bufferFactory, codec);
         String key = s3SinkService.generateKey();
         assertNotNull(key);
         assertThat(key, true);
-        assertThat(key, key.contains(pathPrefix+dateString));
+        assertThat(key, key.contains(pathPrefix + dateString));
     }
 
     @Test
@@ -148,8 +147,8 @@ class S3SinkServiceTest {
     }
 
 
-     // If event_count threshold set as zero, Hence event_count will be
-     // ignored as part of threshold check.
+    // If event_count threshold set as zero, Hence event_count will be
+    // ignored as part of threshold check.
     @Test
     void test_output_with_threshold_set_as_zero_event_count() throws IOException {
         when(s3SinkConfig.getThresholdOptions().getEventCount()).thenReturn(0);
