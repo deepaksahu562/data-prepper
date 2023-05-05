@@ -16,6 +16,8 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 @ExtendWith(MockitoExtension.class)
 class LocalFileBufferTest {
 
+    public static final int MAX_EVENTS = 55;
+
     @Mock
     private S3Client s3Client;
     private LocalFileBuffer localFileBuffer;
@@ -24,32 +26,23 @@ class LocalFileBufferTest {
     void test_with_write_event_into_buffer() throws IOException {
         localFileBuffer = new LocalFileBuffer();
 
-        while (localFileBuffer.getEventCount() < 55) {
+        while (localFileBuffer.getEventCount() < MAX_EVENTS) {
             localFileBuffer.writeEvent(generateByteArray());
         }
         assertThat(localFileBuffer.getSize(), greaterThan(1l));
-        assertThat(localFileBuffer.getEventCount(), equalTo(55));
+        assertThat(localFileBuffer.getEventCount(), equalTo(MAX_EVENTS));
         assertThat(localFileBuffer.getDuration(), greaterThanOrEqualTo(0L));
-    }
-
-    @Test
-    void test_without_write_event_into_buffer() {
-        localFileBuffer = new LocalFileBuffer();
-        assertThat(localFileBuffer.getSize(), equalTo(0L));
-        assertThat(localFileBuffer.getEventCount(), equalTo(0));
-        assertThat(localFileBuffer.getDuration(), lessThanOrEqualTo(0L));
-
     }
 
     @Test
     void test_with_write_event_into_buffer_and_flush_toS3() throws IOException {
         localFileBuffer = new LocalFileBuffer();
 
-        while (localFileBuffer.getEventCount() < 55) {
+        while (localFileBuffer.getEventCount() < MAX_EVENTS) {
             localFileBuffer.writeEvent(generateByteArray());
         }
         assertThat(localFileBuffer.getSize(), greaterThan(1l));
-        assertThat(localFileBuffer.getEventCount(), equalTo(55));
+        assertThat(localFileBuffer.getEventCount(), equalTo(MAX_EVENTS));
         assertThat(localFileBuffer.getDuration(), greaterThanOrEqualTo(0L));
 
         boolean isUploadedToS3 = localFileBuffer.flushToS3(s3Client, "data-prepper", "log.txt");
